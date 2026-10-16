@@ -1,0 +1,70 @@
+# seqsalvage <img src="man/figures/logo.png" align="right" height="139" alt="seqsalvage hex logo: a four-colour Sanger trace with its base calls" />
+
+seqsalvage reads data from proprietary molecular biology software into R. It currently
+supports Sequencher project files (`.SPF`). It can extract the chromatograms, base calls,
+quality scores and peak positions stored in a project, and write them back out as `.ab1`
+trace files.
+
+We aim to support open science and reproducible research by reducing dependence on
+proprietary software, which can lock a lab out of its own data once the software stops
+running. Sequencher 5.4 for Mac, for example, is a 32-bit application and no longer opens on
+current macOS. Since these file formats are not publicly documented, the parsers are developed
+through reverse engineering and implemented directly in base R. If you run into a file that
+doesn't parse correctly (or at all), please [open an issue](https://github.com/ethanbass/seqsalvage/issues).
+
+## Installation
+
+```r
+# install.packages("remotes")
+remotes::install_local("path/to/seqsalvage")
+```
+
+## Usage
+
+```r
+library(seqsalvage)
+
+reads <- read_spf("project.SPF")
+reads[[1]]$name
+substr(reads[[1]]$bases, 1, 60)
+matplot(reads[[1]]$traces[1:600, ], type = "l", lty = 1, col = c("green3", "blue", "black", "red"))
+
+# write every read in the project as an .ab1 file
+spf_to_abif("project.SPF", "recovered_traces")
+
+# also fill the base-caller tags, so Biopython and sangerseqR can read the files
+spf_to_abif("project.SPF", "recovered_traces", basecaller = TRUE)
+
+# include reads deleted from the project whose data is still in the file
+deleted <- Filter(function(r) r$deleted, read_spf("project.SPF", deleted = TRUE))
+
+# contigs: name, saved consensus and member reads
+contigs <- read_spf_contigs("project.SPF")
+contigs[[1]]$name
+contigs[[1]]$reads
+
+# write each contig's saved consensus to a FASTA file
+spf_contigs_to_fasta("project.SPF", "contigs.fasta")
+```
+
+Each read comes back with its file name, base calls (including any edits made in Sequencher),
+quality scores, peak positions and the four processed trace channels. A project keeps only the
+edited calls and doesn't mark which reads were edited, so `spf_to_abif()` writes the calls to
+the ABIF tags for user-edited calls. Biopython and sangerseqR read only the base-caller tags;
+`basecaller = TRUE` copies the calls there too, at the cost of labelling any edits as
+base-caller output.
+
+## Status
+
+The Sequencher parser was reverse engineered from a project saved by Sequencher 
+5.4 on a Mac. For the 150 reads in that project whose original `.ab1` files 
+survive, it reproduces the processed trace channels, peak positions and quality scores exactly.
+It does not recover the raw channels, so the `.ab1` files that `spf_to_abif()` writes are not
+copies of the originals. `read_spf()` also reads all 2,213 reads in the 14 Sequencher projects 
+published with [Claussin and Chang (2016)](https://doi.org/10.1371/journal.pgen.1006176) and
+[Zenodo record 5557681](https://zenodo.org/records/5557681), though these come without original
+files to compare against.
+
+`read_spf_contigs()` reads each contig's name, saved consensus and member reads, but not where
+each read sits in the contig. In the published projects, it places every read in a contig.
+`?spf_format` describes the format.

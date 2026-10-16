@@ -1,0 +1,19 @@
+Package: seqsalvage
+Title: Import 'Sequencher' Sanger Sequencing Projects
+Version: 0.1.0
+Authors@R:
+    person("Ethan", "Bass", email = "ethanbass@uchicago.edu", role = c("aut", "cre"))
+Description: Reads 'Sequencher' project files ('.SPF'), extracting each read's
+    processed chromatogram traces, base calls, quality scores and peak
+    positions, and each contig's name, saved consensus sequence and member
+    reads. Can also recover reads and contigs deleted from a project whose data
+    remains in the file. Writes reads out as 'ABIF' ('.ab1') trace files and
+    contig consensus sequences as 'FASTA'.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Suggests:
+    sangerseqR,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.1
